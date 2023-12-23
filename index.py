@@ -1,4 +1,4 @@
-import utime, network, urequests, gc, machine, socket, requests
+import utime, network, gc, machine, socket, ujson
 from machine import Pin, PWM, Timer
 
 print("Ejecutando Programa")
@@ -9,7 +9,7 @@ print("Ejecutando Programa")
 # Pins
 servo = PWM(Pin(13,Pin.OUT),freq=50)
 led = Pin(27,Pin.OUT)
-boton_dispensar = Pin(12,Pin.IN,Pin.PULL_UP)
+boton = Pin(12,Pin.IN,Pin.PULL_UP)
 
 # Wifi
 wifi_ssid = "Fibertel WiFi444 2.4GHz"
@@ -17,12 +17,6 @@ wifi_password = "00427182700"
 
 # Web Server
 tcp_socket = ''
-
-def prender_led():
-    led.on()
-    utime.sleep(0.5)
-    led.off()
-    utime.sleep(0.5)
 
 # ===========================
 # FUNCIONES WIFI y Web Server
@@ -42,10 +36,14 @@ def conectarse_wifi():
 
 def crear_web_server():
     global tcp_socket
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.bind(('',80))
-    tcp_socket.listen(5)
-    prender_led()
+    try:
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_socket.bind(('0.0.0.0', 80))
+        tcp_socket.listen(5)
+        prender_led()
+    except OSError as e:
+        print("Error al crear el servidor:", e)
+
 
 def peticion_web_server():
     conn, addr = tcp_socket.accept()
@@ -72,9 +70,75 @@ def peticion_web_server():
             + pagina_web
         )
     elif 'POST /' in request:
-        content_start = request.find('\r\n\r\n') + 4
-        content = request[content_start:]
-        print('Datos recibidos:', content)
+        url_archivo = 'horarios.json'
+
+        contenido = request.find('\r\n\r\n') + 4
+        contenido = request[contenido:]
+        contenido = ujson.loads(contenido)
+        contenido['HABILITADO'] = 1
+
+        with open(url_archivo, 'r') as archivo:
+            horarios = ujson.load(archivo)
+        horarios.append(contenido)
+
+        with open(url_archivo, "w") as archivo:
+            archivo.write(ujson.dumps(horarios))
+
+        response = (
+            'HTTP/1.1 200 OK\n'
+            'Content-Type: text/html\n'
+            'Connection: close\n\n'
+        )
+    elif 'DELETE /' in request:
+        url_archivo = 'horarios.json'
+
+        contenido = request.find('\r\n\r\n') + 4
+        contenido = request[contenido:]
+        contenido = ujson.loads(contenido)
+
+        with open(url_archivo, 'r') as archivo:
+            horarios = ujson.load(archivo)
+
+        for i, array in enumerate(horarios):
+            if array.get('HORA') == contenido['HORA']:
+                del horarios[i]
+                
+        with open(url_archivo, "w") as archivo:
+            archivo.write(ujson.dumps(horarios))
+
+        response = (
+            'HTTP/1.1 200 OK\n'
+            'Content-Type: text/html\n'
+            'Connection: close\n\n'
+        )
+    elif 'PUT /' in request:
+        url_archivo = 'horarios.json'
+
+        contenido = request.find('\r\n\r\n') + 4
+        contenido = request[contenido:]
+        contenido = ujson.loads(contenido)
+
+        with open(url_archivo, 'r') as archivo:
+            horarios = ujson.load(archivo)
+
+        indiceArray = -1
+
+        for i, array in enumerate(horarios):
+            if array.get('HORA') == contenido['HORA']:
+                indiceArray = i
+        
+        horarios[indiceArray]['HORA'] = contenido.get('HORA_NUEVA', horarios[indiceArray]['HORA'])
+        horarios[indiceArray]['PORCIONES'] = contenido.get('PORCIONES_NUEVA', horarios[indiceArray]['PORCIONES'])
+        horarios[indiceArray]['HABILITADO'] = contenido.get('HABILITADO_NUEVA', horarios[indiceArray]['HABILITADO'])
+                
+        with open(url_archivo, "w") as archivo:
+            archivo.write(ujson.dumps(horarios))
+
+        response = (
+            'HTTP/1.1 200 OK\n'
+            'Content-Type: text/html\n'
+            'Connection: close\n\n'
+        )
     else:
         response = 'HTTP/1.1 404 Not Found\nContent-Type: text/plain\nConnection: close\n\n404 Not Found'
 
@@ -84,16 +148,15 @@ def peticion_web_server():
 # ===========================
 # FUNCIONES Para Dispensar
 # ===========================
-    
-def funcion_boton_dispensar():
-    while boton_dispensar.value():
-        continue
-    
-    utime.sleep(0.3)
-    dispensar_comida(1)
 
-    while not boton_dispensar.value():
-        continue
+def prender_led():
+    led.on()
+    utime.sleep(0.5)
+    led.off()
+    utime.sleep(0.5)
+ 
+def evento_boton(pin):
+    dispensar_comida(1)
 
 def controlar_horarios(timer):
     with open('horarios.json', 'r') as archivo:
@@ -125,8 +188,9 @@ def dispensar_comida(porciones):
 servo.duty(25)
 conectarse_wifi()
 crear_web_server()
-Timer(1).init(mode=Timer.PERIODIC, period=60000, callback=controlar_horarios)
+# Timer(1).init(mode=Timer.PERIODIC, period=60000, callback=controlar_horarios)
+boton.irq(trigger=machine.Pin.IRQ_FALLING, handler=evento_boton)
 
 while True:
-    funcion_boton_dispensar()
     peticion_web_server()
+    utime.sleep(0.01)    

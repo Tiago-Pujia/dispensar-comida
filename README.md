@@ -8,6 +8,10 @@
   - [Ordenamiento de Archivo](#ordenamiento-de-archivo)
   - [Variables](#variables)
   - [Utilización de la API](#utilización-de-la-api)
+    - [Tipo GET](#tipo-get)
+    - [Tipo POST](#tipo-post)
+    - [Tipo DELETE](#tipo-delete)
+    - [Tipo PUT](#tipo-put)
 
 ---
 ## Idea y Concepto
@@ -66,10 +70,33 @@ Estas son variables que deben de cambiarse en los siguientes archivos, segun la 
 ## Utilización de la API
 El microcontrolador servira como una API como tal:
 
-> ### Tipo GET
+### Tipo GET
+> **/** 
+> 
+> Obtenemos el archivo principal "index.html"
+
+> **/horarios** 
+> 
+> Obtenemos los horarios "horarios.json"
  
-> ### Tipo POST
+### Tipo POST
+> **/**
+> 
+> Creamos un nuevo horario. Especificamos:
+> - HORA
+> - PORCIONES
 
-> ### Tipo PUT
+### Tipo DELETE
+> /
+>
+> Eliminamos un horario. Especificamos:
+> - HORA
 
-> ### Tipo DELETE
+### Tipo PUT
+> /
+>
+> Modificamos un horario. Especificamos:
+> - HORA
+> - HORA_NUEVA (opcional)
+> - PORCIONES_NUEVA (opcional)
+> - HABILITAR_NUEVA (opcional)
