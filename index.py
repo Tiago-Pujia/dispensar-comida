@@ -121,6 +121,7 @@ def peticion_web_server():
             for i, array in enumerate(horarios):
                 if array.get('HORA') == contenido['HORA']:
                     del horarios[i]
+                    break
 
             with open('horarios.json', "w") as archivo:
                 archivo.write(ujson.dumps(horarios))
@@ -147,6 +148,7 @@ def peticion_web_server():
             for i, array in enumerate(horarios):
                 if array.get('HORA') == contenido['HORA']:
                     indiceArray = i
+                    break
 
             horarios[indiceArray]['HORA'] = contenido.get('HORA_NUEVA', horarios[indiceArray]['HORA'])
             horarios[indiceArray]['PORCIONES'] = contenido.get('PORCIONES_NUEVA', horarios[indiceArray]['PORCIONES'])
@@ -178,9 +180,9 @@ def peticion_web_server():
 
 def prender_led():
     led.on()
-    utime.sleep(0.5)
+    utime.sleep(1.5)
     led.off()
-    utime.sleep(0.5)
+    utime.sleep(1.5)
  
 def evento_boton(pin):
     dispensar_comida(1)

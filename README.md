@@ -8,10 +8,10 @@
   - [Ordenamiento de Archivo](#ordenamiento-de-archivo)
   - [Variables](#variables)
   - [Utilización de la API](#utilización-de-la-api)
-    - [Tipo GET](#tipo-get)
-    - [Tipo POST](#tipo-post)
-    - [Tipo DELETE](#tipo-delete)
-    - [Tipo PUT](#tipo-put)
+    - [Metodo GET](#metodo-get)
+    - [Metodo POST](#metodo-post)
+    - [Metodo DELETE](#metodo-delete)
+    - [Metodo PUT](#metodo-put)
 
 ---
 ## Idea y Concepto
@@ -20,12 +20,14 @@ Clonar Repositorio:
 git clone https://github.com/Tiago-Pujia/Dispensador-Comida
 ~~~
 
-El proyecto trata sobre un alimentador de mascotas automatico y manual, donde dispensa X cantidad de comida todos los dias en una hora especifica. Este, puede controlarse desde un panel de control en forma de pagina web.
+El proyecto trata sobre un alimentador de mascotas automatico y manual, donde dispensa X cantidad de comida todos los dias en una hora especifica. Este, puede controlarse desde un panel de control en forma de pagina web. Podemos crear, modificar y eliminar horarios e incluso dispensar alimento de forma remota.
+
+![Interfaz Grafica](/imgs/muestra.jpg)
 
 ---
 ## Especificación Tecnica
 **Componentes fisicos necesarios:**
-- MicroControlador (que soporte WIFI como ESP32)
+- MicroControlador (que soporte WIFI y Web Server como ESP32)
 - Servo 180°
 - 1 Boton
 - Cables
@@ -37,16 +39,15 @@ El proyecto trata sobre un alimentador de mascotas automatico y manual, donde di
 - JSON (formato en red)
 - JavaScript (web)
 - Bootstrap (FrameWork CSS)
-- JQuery (Libreria JS)
 
 El microcontrolador creara una Web-Server HTTP donde el cliente hara todas las peticiones, este puede entregar el panel de control donde definimeros todas las acciones como crear, modificar o eliminar los horarios. Estos se guardaran en un archivo en formato JSON llamado "horarios.json", el microcontrolador se encargara de modificar este archivo.
 
 El archivo JSON contrenda un array con una lista de objetos, estos tendran los atributos:
-  - HORA (tiempo)
-  - PORCIONES (cantidad de 1 a 9)
-  - HABILITADO (1 habilitado)
+  - HORA (tiempo) (string)
+  - PORCIONES (cantidad de 1 a 9) (number)
+  - HABILITADO (1 habilitado y 0 deshabilitado) (number)
 
-Todos los archivos estaran almacenados en la memoria del microcontrolador
+Todos los archivos estaran almacenados en la memoria ROM del microcontrolador excepto el framework Bootstrap que estara en la nube
 
 ---
 ## Ordenamiento de Archivo
@@ -62,15 +63,15 @@ Estas son variables que deben de cambiarse en los siguientes archivos, segun la 
 > 
 > Wifi
 > ~~~
-> 19 wifi_ssid = ""
-> 20 wifi_password = ""
+> 15 wifi_ssid = ""
+> 16 wifi_password = ""
 > ~~~
 
 ---
 ## Utilización de la API
 El microcontrolador servira como una API como tal:
 
-### Tipo GET
+### Metodo GET
 > **/** 
 > 
 > Obtenemos el archivo principal "index.html"
@@ -79,20 +80,25 @@ El microcontrolador servira como una API como tal:
 > 
 > Obtenemos los horarios "horarios.json"
  
-### Tipo POST
+### Metodo POST
 > **/**
 > 
 > Creamos un nuevo horario. Especificamos:
 > - HORA
 > - PORCIONES
 
-### Tipo DELETE
+> **/dispensar**
+>
+> Dispensamos alimento de manera remota. Especificamos:
+> - PORCIONES
+
+### Metodo DELETE
 > /
 >
 > Eliminamos un horario. Especificamos:
 > - HORA
 
-### Tipo PUT
+### Metodo PUT
 > /
 >
 > Modificamos un horario. Especificamos:
