@@ -32,6 +32,8 @@ def conectarse_wifi():
     while not sta_if.isconnected():
         utime.sleep(0.1)
 
+    ip_actual, mascara, puerta_enlace, dns = sta_if.ifconfig()
+    sta_if.ifconfig(('192.168.0.254', mascara, puerta_enlace, dns))
     print('Dirección IP:', sta_if.ifconfig()[0])
     prender_led()
     
@@ -68,62 +70,102 @@ def peticion_web_server():
             'Connection: close\n\n'
             + pagina_web
         )
+    elif 'POST /dispensar' in request:
+        try:
+            contenido = request.find('\r\n\r\n') + 4
+            contenido = request[contenido:]
+            contenido = ujson.loads(contenido)
+    
+            dispensar_comida(contenido['PORCIONES'])
+    
+            response = (
+                'HTTP/1.1 200 OK\n'
+                'Content-Type: text/html\n'
+                'Connection: close\n\n'
+            )
+        except OSError as e:
+            response = (
+                'HTTP/1.1 406 Not Acceptable\n'
+                'Content-Type: text/html\n'
+                'Connection: close\n\n'
+            )
     elif 'POST /' in request:
-        contenido = request.find('\r\n\r\n') + 4
-        contenido = request[contenido:]
-        contenido = ujson.loads(contenido)
-        contenido['HABILITADO'] = 1
-
-        horarios.append(contenido)
-
-        with open('horarios.json', "w") as archivo:
-            archivo.write(ujson.dumps(horarios))
-
-        response = (
-            'HTTP/1.1 200 OK\n'
-            'Content-Type: text/html\n'
-            'Connection: close\n\n'
-        )
+        try:
+            contenido = request.find('\r\n\r\n') + 4
+            contenido = request[contenido:]
+            contenido = ujson.loads(contenido)
+            contenido['HABILITADO'] = 1
+    
+            horarios.append(contenido)
+    
+            with open('horarios.json', "w") as archivo:
+                archivo.write(ujson.dumps(horarios))
+    
+            response = (
+                'HTTP/1.1 200 OK\n'
+                'Content-Type: text/html\n'
+                'Connection: close\n\n'
+            )
+        except OSError as e:
+            response = (
+                'HTTP/1.1 406 Not Acceptable\n'
+                'Content-Type: text/html\n'
+                'Connection: close\n\n'
+            )
     elif 'DELETE /' in request:
-        contenido = request.find('\r\n\r\n') + 4
-        contenido = request[contenido:]
-        contenido = ujson.loads(contenido)
+        try:
+            contenido = request.find('\r\n\r\n') + 4
+            contenido = request[contenido:]
+            contenido = ujson.loads(contenido)
 
-        for i, array in enumerate(horarios):
-            if array.get('HORA') == contenido['HORA']:
-                del horarios[i]
-                
-        with open('horarios.json', "w") as archivo:
-            archivo.write(ujson.dumps(horarios))
+            for i, array in enumerate(horarios):
+                if array.get('HORA') == contenido['HORA']:
+                    del horarios[i]
 
-        response = (
-            'HTTP/1.1 200 OK\n'
-            'Content-Type: text/html\n'
-            'Connection: close\n\n'
-        )
+            with open('horarios.json', "w") as archivo:
+                archivo.write(ujson.dumps(horarios))
+
+            response = (
+                'HTTP/1.1 200 OK\n'
+                'Content-Type: text/html\n'
+                'Connection: close\n\n'
+            )
+        except OSError as e:
+            response = (
+                'HTTP/1.1 406 Not Acceptable\n'
+                'Content-Type: text/html\n'
+                'Connection: close\n\n'
+            )
     elif 'PUT /' in request:
-        contenido = request.find('\r\n\r\n') + 4
-        contenido = request[contenido:]
-        contenido = ujson.loads(contenido)
+        try:
+            contenido = request.find('\r\n\r\n') + 4
+            contenido = request[contenido:]
+            contenido = ujson.loads(contenido)
 
-        indiceArray = -1
+            indiceArray = -1
 
-        for i, array in enumerate(horarios):
-            if array.get('HORA') == contenido['HORA']:
-                indiceArray = i
-        
-        horarios[indiceArray]['HORA'] = contenido.get('HORA_NUEVA', horarios[indiceArray]['HORA'])
-        horarios[indiceArray]['PORCIONES'] = contenido.get('PORCIONES_NUEVA', horarios[indiceArray]['PORCIONES'])
-        horarios[indiceArray]['HABILITADO'] = contenido.get('HABILITADO_NUEVA', horarios[indiceArray]['HABILITADO'])
-                
-        with open('horarios.json', "w") as archivo:
-            archivo.write(ujson.dumps(horarios))
+            for i, array in enumerate(horarios):
+                if array.get('HORA') == contenido['HORA']:
+                    indiceArray = i
 
-        response = (
-            'HTTP/1.1 200 OK\n'
-            'Content-Type: text/html\n'
-            'Connection: close\n\n'
-        )
+            horarios[indiceArray]['HORA'] = contenido.get('HORA_NUEVA', horarios[indiceArray]['HORA'])
+            horarios[indiceArray]['PORCIONES'] = contenido.get('PORCIONES_NUEVA', horarios[indiceArray]['PORCIONES'])
+            horarios[indiceArray]['HABILITADO'] = contenido.get('HABILITADO_NUEVA', horarios[indiceArray]['HABILITADO'])
+
+            with open('horarios.json', "w") as archivo:
+                archivo.write(ujson.dumps(horarios))
+
+            response = (
+                'HTTP/1.1 200 OK\n'
+                'Content-Type: text/html\n'
+                'Connection: close\n\n'
+            )        
+        except OSError as e:
+            response = (
+                'HTTP/1.1 406 Not Acceptable\n'
+                'Content-Type: text/html\n'
+                'Connection: close\n\n'
+            )
     else:
         response = 'HTTP/1.1 404 Not Found\nContent-Type: text/plain\nConnection: close\n\n404 Not Found'
 
